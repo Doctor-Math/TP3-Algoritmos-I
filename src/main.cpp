@@ -5,33 +5,33 @@
 int main() {
     int numDuendes, numConflitos;
     
-    // Lê a quantidade de vértices (N) e de arestas de conflito (M)
+    // Lê a quantidade de duendes e de conflito
     std::cin >> numDuendes >> numConflitos;
 
-    // Vetor onde cada elemento é um par (a, b) representando um conflito entre vértices
+    // Vetor onde cada elemento é um par (a, b) representando um conflito entre duendes
     std::vector<std::pair<int,int>> conflitos(numConflitos);
 
     // Lê os conflitos fornecidos na entrada
     for (int i = 0; i < numConflitos; i++) {
-        int a, b;
-        std::cin >> a >> b;
-        conflitos[i] = std::make_pair(a, b);
+        int duendeA, duendeB;
+        std::cin >> duendeA >> duendeB;
+        conflitos[i] = std::make_pair(duendeA, duendeB);
     }
 
-    // Cria o solucionador para o problema do conjunto independente
+    // Cria o grafo com os duendes e suas arestas de conflito
     poloNorte duendes(numDuendes, conflitos);
 
-    // Executa o algoritmo e obtém o conjunto independente máximo encontrado
-    std::vector<int> resultado = duendes.formarEquipe();
+    // Executa o algoritmo e obtém a maior equipe sem conflitos (conjunto independente máximo) encontrada
+    std::vector<int> equipeFinal = duendes.formarEquipe();
 
-    // Imprime o tamanho do conjunto independente
-    std::cout << resultado.size() << "\n";
+    // Imprime o tamanho da equipe de duendes
+    std::cout << equipeFinal.size() << "\n";
 
-    // Imprime os vértices escolhidos, separados por espaço
-    for (size_t i = 0; i < resultado.size(); i++) {
+    // Imprime os duendes escolhidos
+    for (size_t i = 0; i < equipeFinal.size(); i++) {
         if (i > 0)
             std::cout << " ";
-        std::cout << resultado[i];
+        std::cout << equipeFinal[i];
     }
     std::cout << "\n";
 
