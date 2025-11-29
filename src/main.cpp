@@ -3,23 +3,23 @@
 #include <vector>
 
 int main() {
-    int N, M;
+    int numDuendes, numConflitos;
     
     // Lê a quantidade de vértices (N) e de arestas de conflito (M)
-    std::cin >> N >> M;
+    std::cin >> numDuendes >> numConflitos;
 
     // Vetor onde cada elemento é um par (a, b) representando um conflito entre vértices
-    std::vector<std::pair<int,int>> conflitos(M);
+    std::vector<std::pair<int,int>> conflitos(numConflitos);
 
     // Lê os conflitos fornecidos na entrada
-    for (int i = 0; i < M; i++) {
+    for (int i = 0; i < numConflitos; i++) {
         int a, b;
         std::cin >> a >> b;
         conflitos[i] = std::make_pair(a, b);
     }
 
     // Cria o solucionador para o problema do conjunto independente
-    poloNorte duendes(N, conflitos);
+    poloNorte duendes(numDuendes, conflitos);
 
     // Executa o algoritmo e obtém o conjunto independente máximo encontrado
     std::vector<int> resultado = duendes.formarEquipe();

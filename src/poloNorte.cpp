@@ -22,14 +22,14 @@ void poloNorte::mascaraParaVetor(uint32_t mascara, int deslocamento,
  * Retorna true se A < B na ordem lexicográfica.
  * Usado para desempatar subconjuntos com mesmo tamanho.
  */
-bool poloNorte::vetorLexMenor(const std::vector<int>& A,
-                                         const std::vector<int>& B) {
-    size_t n = std::min(A.size(), B.size());
+bool poloNorte::vetorLexMenor(const std::vector<int>& equipeDuendesA,
+                                         const std::vector<int>& equipeDuendesB) {
+    size_t n = std::min(equipeDuendesA.size(), equipeDuendesB.size());
     for (size_t i = 0; i < n; i++) {
-        if (A[i] < B[i]) return true;
-        if (A[i] > B[i]) return false;
+        if (equipeDuendesA[i] < equipeDuendesB[i]) return true;
+        if (equipeDuendesA[i] > equipeDuendesB[i]) return false;
     }
-    return A.size() < B.size();
+    return equipeDuendesA.size() < equipeDuendesB.size();
 }
 
 /*
@@ -117,7 +117,7 @@ poloNorte::poloNorte(
 std::vector<int> poloNorte::formarEquipe() {
 
     // ------------------------
-    // ETAPA 1: Independentes da esquerda
+    // ETAPA 1: Encontrar os conjuntos (máscaras) independentes dos duendes da esquerda
     // ------------------------
 
     int totalCombinacoesEsq = 1 << tamanhoEsquerda; // Calcula todas as combinações possíveis entre os duendes da esquerda
@@ -142,15 +142,15 @@ std::vector<int> poloNorte::formarEquipe() {
     }
 
     // ------------------------
-    // ETAPA 2: DP da metade direita
+    // ETAPA 2: Memoização para a metade direita
     // ------------------------
 
     int totalCombinacoesDir = 1 << tamanhoDireita; // Calcula todas as combinações de duendes possíveis
 
-    std::vector<int> tamanhoEquipes(totalCombinacoesDir, -1); // Vetor com o tamanho das equipes
-    std::vector<uint32_t> equipesValidas(totalCombinacoesDir, 0); // Vetor com as máscaras de bits das equipes
+    std::vector<int> tamanhoEquipes(totalCombinacoesDir, -1); // Vetor com os tamanhos das equipes (inicializados com -1)
+    std::vector<uint32_t> equipes(totalCombinacoesDir, 0); // Vetor com as máscaras de bits das equipes
 
-    // 2.1 — Máscaras independentes diretamente
+    // 2.1 — Gerar conjuntos (máscaras) independentes de duendes da direita 
     for (uint32_t equipeDuendes = 0; equipeDuendes < (uint32_t)totalCombinacoesDir; equipeDuendes++) {
         bool equipeValida = true;
         uint32_t equipeDuendesTeste = equipeDuendes;
@@ -166,26 +166,27 @@ std::vector<int> poloNorte::formarEquipe() {
 
         if (equipeValida) {
             tamanhoEquipes[equipeDuendes] = __builtin_popcount(equipeDuendes); // Recebe o tamanho da equipe
-            equipesValidas[equipeDuendes]    = equipeDuendes; // Recebe a máscara de bits da equipe
+            equipes[equipeDuendes]    = equipeDuendes; // Recebe a máscara de bits da equipe
         }
     }
 
-    // 2.2 — Transição de DP por submáscaras
+    // 2.2 — Correção de submáscaras inválidas (substituição pelo maior conj. indep. dentro delas) 
     for (uint32_t equipe = 0; equipe < (uint32_t)totalCombinacoesDir; equipe++) {
         for (int idDuende = 0; idDuende < tamanhoDireita; idDuende++) {
-            if (equipe & (1u << idDuende)) { // Se for uma equipe válida e contiver o duende
+            if (equipe & (1u << idDuende)) { // Se a equipe contiver o duende
                 uint32_t subequipe = equipe ^ (1u << idDuende); // Remove o duende da equipe
                 bool subMelhor =
-                // Se a subequipe for maior que a original ou
-                //se for igual e lexicograficamente maior
-                    (tamanhoEquipes[subequipe] > tamanhoEquipes[equipe]) ||
+                // Se a submáscara da equipe possuir tamanho maior, é sinal de que a máscara da equipe é inválida (tamanho=-1) e temos que substitui-la.
+                // Se for igual, então a equipe era inválida, se tornou válida e é, atualmente, alguma de suas submáscaras. Então ficamos com a menor lexicograficamente.
+                // Se não, é uma máscara sempre válida e não faz nada
+                (tamanhoEquipes[subequipe] > tamanhoEquipes[equipe]) ||
                     (tamanhoEquipes[subequipe] == tamanhoEquipes[equipe] &&
-                     equipesValidas[subequipe] < equipesValidas[equipe]);
+                     equipes[subequipe] < equipes[equipe]);
 
-                // Se a subequipe for melhor 
+                // Se a subequipe for melhor (por tamanho ou lexicograficamente)
                 if (subMelhor) {
-                    tamanhoEquipes[equipe] = tamanhoEquipes[subequipe];
-                    equipesValidas[equipe]    = equipesValidas[subequipe];
+                    tamanhoEquipes[equipe] = tamanhoEquipes[subequipe]; // Atualiza o tamanho
+                    equipes[equipe]    = equipes[subequipe]; // Atualiza a máscara
                 }
             }
         }
@@ -195,38 +196,39 @@ std::vector<int> poloNorte::formarEquipe() {
     // ETAPA 3: Combinação final esquerda + melhor direita
     // ------------------------
 
-    std::vector<int> melhorResultado;
+    std::vector<int> melhorResultado; // Vetor com a maior equipe possível
     size_t melhorTamanho = 0;
 
-    for (uint32_t mascaraEsq : mascarasIndependentesEsquerda) {
+    for (uint32_t mascaraEsq : mascarasIndependentesEsquerda) { // Percorre toda equipe (máscara) válida na esquerda
 
-        // vetor esquerdo
+        // Converte a equipe (máscara) para um vetor
         std::vector<int> vetorEsq;
-        mascaraParaVetor(mascaraEsq, 0, vetorEsq);
+        mascaraParaVetor(mascaraEsq, 0, vetorEsq); 
 
-        // vértices proibidos na direita
-        uint32_t bloqueioDireita = 0u;
+        uint32_t bloqueioDireita = 0u; // Duendes da direita que tem algum conflito com os da equipeEsq (setados com 0)
         uint32_t m = mascaraEsq;
 
+        // Iteração pelos duendes para obtenção dos duendes conflitantes da direita
         while (m) {
-            uint32_t lsb = m & -m;
-            int i = __builtin_ctz(m);
-            bloqueioDireita |= conflitosEsquerdaParaDireita[i];
-            m ^= lsb;
+            uint32_t lsb = m & -m; // Isola o duende de menor id da equipe
+            int idDuende = __builtin_ctz(m); // Pega o id do duende isolado
+            bloqueioDireita |= conflitosEsquerdaParaDireita[idDuende]; // Insere duendes com conflito na máscara (operação OR)
+            m ^= lsb; // Remove o duende da lista (passa pro próximo)
         }
 
-        // máscara permitida
+        // Obtém os duendes da direita permitidos para essa equipe da esquerda
         uint32_t permitidasDireita =
-            ((1u << tamanhoDireita) - 1u) & ~bloqueioDireita;
+            ((1u << tamanhoDireita) - 1u) & ~bloqueioDireita; // Faz o complemento dos proibidos apenas
+            // para as posições relativas aos ids dos duendes da direita
 
-        // melhor máscara da direita
-        uint32_t melhorMascara = equipesValidas[permitidasDireita];
+        // Melhor equipe (máscara) da direita com estes duendes
+        uint32_t melhorMascara = equipes[permitidasDireita];
 
-        // vetor da direita — CRÍTICO (faltava no seu código)
+        // Transforma esta máscara em vetor
         std::vector<int> vetorDireita;
         mascaraParaVetor(melhorMascara, tamanhoEsquerda, vetorDireita);
 
-        // merge ordenado
+        // Combina os dois vetores (duendes da direita e da esquerda)
         std::vector<int> combinacao;
         combinacao.reserve(vetorEsq.size() + vetorDireita.size());
 
@@ -238,14 +240,16 @@ std::vector<int> poloNorte::formarEquipe() {
         while (i < vetorEsq.size())     combinacao.push_back(vetorEsq[i++]);
         while (j < vetorDireita.size()) combinacao.push_back(vetorDireita[j++]);
 
-        // atualizar melhor resposta
+        // Atualiza a maior/melhor equipe
         size_t tamanhoAtual = combinacao.size();
+        // Se o tamanho do atual for maior ou 
+        // Se os tamanhos forem iguais e o vetor final estiver vazio ou o atual for lexicograficamente menor
         if (tamanhoAtual > melhorTamanho ||
             (tamanhoAtual == melhorTamanho &&
              (melhorResultado.empty() || vetorLexMenor(combinacao, melhorResultado)))) {
 
-            melhorTamanho = tamanhoAtual;
-            melhorResultado = combinacao;
+            melhorTamanho = tamanhoAtual; // Atualiza o tamanho
+            melhorResultado = combinacao; // Atualiza combinação
         }
     }
 
