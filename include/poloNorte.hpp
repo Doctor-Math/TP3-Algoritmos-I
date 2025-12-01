@@ -38,9 +38,6 @@ private:
     // Lista de máscaras que representam conjuntos independentes válidos da metade esquerda
     std::vector<uint32_t> mascarasIndependentesEsquerda;
 
-    // Conta quantos bits iguais a 1 existem na máscara x
-    // int contarBits(uint32_t x);
-
     // Converte uma máscara de bits para um vetor de índices globais
     void mascaraParaVetor(uint32_t mascara, int deslocamento, std::vector<int>& saida);
 
