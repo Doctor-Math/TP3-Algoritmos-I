@@ -1,4 +1,9 @@
 # 🎄 Trabalho Prático 3 — Algoritmos I  
+
+## 🏷️ Status e Tecnologias
+![Feito em C++](https://img.shields.io/badge/C%2B%2B-Feito%20em-blue)
+![Badge Concluído](https://img.shields.io/badge/Status-Conclu%C3%ADdo-brightgreen)
+
 ### Maximum Independent Set com Meet-in-the-Middle
 
 **Autor:** Matheus Soares dos Santos de Freitas  
